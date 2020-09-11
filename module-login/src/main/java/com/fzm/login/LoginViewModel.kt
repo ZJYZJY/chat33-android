@@ -26,11 +26,15 @@ class LoginViewModel(
     val loginResult: LiveData<ChatLogin>
         get() = _loginResult
 
-    fun sendCode(phone: String) {
+    fun sendCode(account: String, type: Int) {
         start {
             loading()
         }.request {
-            repository.sendCode(phone)
+            if (type == 0) {
+                repository.sendCode(account)
+            } else {
+                repository.sendEmail(account)
+            }
         }.result({
             _codeResult.value = true
         }, {
@@ -40,11 +44,11 @@ class LoginViewModel(
         })
     }
 
-    fun login(phone: String, code: String) {
+    fun login(account: String, code: String, type: Int) {
         start {
             loading()
         }.request {
-            repository.login(phone, code)
+            repository.loginV2(account, code, type)
         }.result({
             _loginResult.value = it
         }, {

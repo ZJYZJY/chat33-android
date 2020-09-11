@@ -14,7 +14,6 @@ import com.fzm.chat33.core.bean.param.toDecParams
 import com.fzm.chat33.core.manager.DownloadManager
 import com.fzm.chat33.core.manager.FileEncryption
 import com.fzm.chat33.core.manager.toByteArray
-import kotlinx.coroutines.*
 import java.io.*
 import java.lang.RuntimeException
 import java.security.MessageDigest
@@ -63,39 +62,35 @@ class ChatEncryptLoader2 : ModelLoader<SingleKeyEncrypt, InputStream> {
     }
 
     class ChatDataFetcher(private val encrypt: SingleKeyEncrypt) : DataFetcher<InputStream> {
+        @Volatile
         private var isCanceled: Boolean = false
         var mInputStream: InputStream? = null
-        private var job: Job? = null
 
         override fun loadData(priority: Priority, callback: DataFetcher.DataCallback<in InputStream>) {
-            job = GlobalScope.launch(Dispatchers.Main) {
-                try {
-                    if (!isCanceled) {
-                        val file = if (encrypt.data.startsWith("http")) {
-                            withContext(Dispatchers.IO) {
-                                DownloadManager.downloadTemp(encrypt.data)
-                            }
-                        } else {
-                            File(encrypt.data)
-                        }
-                        if (file == null) {
-                            callback.onLoadFailed(RuntimeException("picture download fail"))
-                            return@launch
-                        }
-                        mInputStream = if (AppConfig.FILE_ENCRYPT && file.path.contains(AppConfig.ENC_PREFIX)) {
-                            // 加密文件先解密
-                            ByteArrayInputStream(FileEncryption.decrypt(encrypt.key.toDecParams(), File(file.path).toByteArray()))
-                        } else {
-                            FileInputStream(file.path)
-                        }
+            try {
+                if (!isCanceled) {
+                    val file = if (encrypt.data.startsWith("http")) {
+                        DownloadManager.downloadTemp(encrypt.data)
+                    } else {
+                        File(encrypt.data)
                     }
-                    if (isCanceled) {
-                        return@launch
+                    if (file == null) {
+                        callback.onLoadFailed(RuntimeException("picture download fail"))
+                        return
                     }
-                    callback.onDataReady(mInputStream)
-                } catch (e: Exception) {
-                    callback.onLoadFailed(e)
+                    mInputStream = if (AppConfig.FILE_ENCRYPT && file.path.contains(AppConfig.ENC_PREFIX)) {
+                        // 加密文件先解密
+                        ByteArrayInputStream(FileEncryption.decryptSync(encrypt.key.toDecParams(), File(file.path).toByteArray()))
+                    } else {
+                        FileInputStream(file.path)
+                    }
                 }
+                if (isCanceled) {
+                    return
+                }
+                callback.onDataReady(mInputStream)
+            } catch (e: Exception) {
+                callback.onLoadFailed(e)
             }
         }
 
@@ -109,7 +104,6 @@ class ChatEncryptLoader2 : ModelLoader<SingleKeyEncrypt, InputStream> {
 
         override fun cancel() {
             isCanceled = true
-            job?.cancel()
         }
 
         override fun getDataClass(): Class<InputStream> {

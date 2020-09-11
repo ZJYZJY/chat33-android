@@ -4,9 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.os.CountDownTimer
-import android.text.Editable
-import android.text.TextUtils
-import android.text.TextWatcher
+import android.text.*
 import android.view.KeyEvent
 import android.view.View
 import android.widget.TextView
@@ -28,6 +26,7 @@ import com.fuzamei.componentservice.ext.findViewModel
 import com.fzm.chat33.login.R
 import kotlinx.android.synthetic.main.chat_activity_login.*
 import org.kodein.di.generic.instance
+import java.util.regex.Pattern
 
 /**
  * @author zhengjy
@@ -37,16 +36,22 @@ import org.kodein.di.generic.instance
 @Route(path = AppRoute.LOGIN)
 class LoginActivity : DILoadableActivity() {
 
-    val REQUESTCODE_VERIFY = 111
+    companion object {
+        const val PHONE_LOGIN = 0
+        const val EMAIL_LOGIN = 1
+    }
 
-    private var mPhone: String = ""
+    private var mAccount: String = ""
         get() {
             return field.replace(" ".toRegex(), "")
         }
     private var msgCountDownTimer: MsgCountDownTimer? = null
+    private var loginType: Int = PHONE_LOGIN
 
     private val provider: ViewModelProvider.Factory by instance(tag = "login")
     private lateinit var viewModel: LoginViewModel
+
+    private val EAMIL_PATTERN = Pattern.compile("^[a-zA-Z0-9_-]+@[a-zA-Z0-9_-]+(\\.[a-zA-Z0-9_-]+)+\$")
 
     /**
      * 用于控制是否在登录之前就能看打开应用内浏览器
@@ -74,11 +79,22 @@ class LoginActivity : DILoadableActivity() {
     }
 
     override fun initData() {
-        val phone = AppPreference.LAST_LOGIN_PHONE
-        if (phone.isNotEmpty()) {
-            et_phone.setText(phone)
-            et_phone.setSelection(phone.length)
-            mPhone = phone
+        mAccount = AppPreference.LAST_LOGIN_ACCOUNT
+        loginType = AppPreference.LAST_LOGIN_TYPE
+        if (mAccount.isNotEmpty()) {
+            if (loginType == PHONE_LOGIN) {
+                et_phone.setText(mAccount)
+                et_phone.setSelection(mAccount.length)
+                et_phone.visibility = View.VISIBLE
+                et_email.visibility = View.GONE
+                switch_login.setText(R.string.login_action_use_email)
+            } else if (loginType == EMAIL_LOGIN) {
+                et_email.setText(mAccount)
+                et_email.setSelection(mAccount.length)
+                et_email.visibility = View.VISIBLE
+                et_phone.visibility = View.GONE
+                switch_login.setText(R.string.login_action_use_phone)
+            }
         }
     }
 
@@ -88,7 +104,12 @@ class LoginActivity : DILoadableActivity() {
             if (it != null) {
                 dismiss()
                 ShowUtils.showToastNormal(instance, if (it.type == 0) R.string.login_tips_register_success else R.string.login_tips_login_success)
-                AppPreference.LAST_LOGIN_PHONE = et_phone.text.toString().trim()
+                if (loginType == PHONE_LOGIN) {
+                    AppPreference.LAST_LOGIN_ACCOUNT = et_phone.text.toString().trim()
+                } else if (loginType == EMAIL_LOGIN) {
+                    AppPreference.LAST_LOGIN_ACCOUNT = et_email.text.toString().trim()
+                }
+                AppPreference.LAST_LOGIN_TYPE = loginType
                 AppPreference.TOKEN = it.token
                 ARouter.getInstance().build(AppRoute.MAIN).withBundle("data", data).navigation()
                 finish()
@@ -96,7 +117,12 @@ class LoginActivity : DILoadableActivity() {
         })
         viewModel.codeResult.observe(this, Observer {
             if (it != null) {
-                AppPreference.LAST_LOGIN_PHONE = et_phone.text.toString().trim()
+                if (loginType == PHONE_LOGIN) {
+                    AppPreference.LAST_LOGIN_ACCOUNT = et_phone.text.toString().trim()
+                } else if (loginType == EMAIL_LOGIN) {
+                    AppPreference.LAST_LOGIN_ACCOUNT = et_email.text.toString().trim()
+                }
+                AppPreference.LAST_LOGIN_TYPE = loginType
                 ShowUtils.showToastNormal(instance, R.string.login_tips_code_sent)
                 msgCountDownTimer = MsgCountDownTimer()
                 msgCountDownTimer?.codeView = tv_get_code
@@ -104,6 +130,37 @@ class LoginActivity : DILoadableActivity() {
                 et_code.postDelayed({
                     KeyboardUtils.showKeyboard(et_code)
                 }, 1000)
+            }
+        })
+        switch_login.setOnClickListener {
+            if (loginType == PHONE_LOGIN) {
+                loginType = EMAIL_LOGIN
+                switch_login.setText(R.string.login_action_use_phone)
+                et_phone.visibility = View.GONE
+                et_email.visibility = View.VISIBLE
+                et_phone.setText("")
+                et_email.setText("")
+                et_code.setText("")
+            } else {
+                loginType = PHONE_LOGIN
+                switch_login.setText(R.string.login_action_use_email)
+                et_phone.visibility = View.VISIBLE
+                et_email.visibility = View.GONE
+                et_phone.setText("")
+                et_email.setText("")
+                et_code.setText("")
+            }
+        }
+        et_email.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+
+            }
+
+            override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+                mAccount = s.toString()
+            }
+
+            override fun afterTextChanged(s: Editable) {
             }
         })
         et_phone.addTextChangedListener(object : TextWatcher {
@@ -125,7 +182,7 @@ class LoginActivity : DILoadableActivity() {
                         et_phone.setSelection(et_phone.text.toString().length)
                     }
                 }
-                mPhone = s.toString()
+                mAccount = s.toString()
             }
 
             override fun afterTextChanged(s: Editable) {
@@ -139,19 +196,19 @@ class LoginActivity : DILoadableActivity() {
                     .navigation()
         }
         tv_get_code.setOnClickListener {
-            if (checkPhone()) {
-                viewModel.sendCode(mPhone)
+            if (checkAccount()) {
+                viewModel.sendCode(mAccount, loginType)
             }
         }
         btn_login.setOnClickListener {
-            if (checkPhone() && checkCode()) {
+            if (checkAccount() && checkCode()) {
                 if (ll_user_protocol.visibility == View.VISIBLE && !cb_select.isChecked) {
                     ShowUtils.showToastNormal(instance, R.string.login_tip_agree_protocol)
                     return@setOnClickListener
                 }
                 KeyboardUtils.hideKeyboard(btn_login)
                 val code = et_code.text.toString().trim()
-                viewModel.login(mPhone, code)
+                viewModel.login(mAccount, code, loginType)
             }
         }
         val route: Uri? = data?.getParcelable("route")
@@ -166,14 +223,26 @@ class LoginActivity : DILoadableActivity() {
         }
     }
 
-    private fun checkPhone(): Boolean {
-        if (mPhone.isEmpty()) {
-            ShowUtils.showToastNormal(this, R.string.login_tips_input_phone)
+    private fun checkAccount(): Boolean {
+        if (mAccount.isEmpty()) {
+            if (loginType == PHONE_LOGIN) {
+                ShowUtils.showToastNormal(this, R.string.login_tips_input_phone)
+            } else {
+                ShowUtils.showToastNormal(this, R.string.login_tips_input_email)
+            }
             return false
         }
-        if (mPhone.length != 11) {
-            ShowUtils.showToastNormal(this, R.string.login_tips_correct_phone)
-            return false
+        if (loginType == PHONE_LOGIN) {
+            if (mAccount.length != 11) {
+                ShowUtils.showToastNormal(this, R.string.login_tips_correct_phone)
+                return false
+            }
+        } else {
+            val matcher = EAMIL_PATTERN.matcher(mAccount)
+            if (!matcher.find()) {
+                ShowUtils.showToastNormal(this, R.string.login_tips_correct_email)
+                return false
+            }
         }
         return true
     }

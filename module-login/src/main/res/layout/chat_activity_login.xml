@@ -59,17 +59,34 @@
                 android:layout_marginStart="14dp"
                 android:orientation="vertical">
 
-                <EditText
-                    android:id="@+id/et_phone"
+                <FrameLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="@null"
-                    android:hint="@string/login_tips_input_phone"
-                    android:inputType="phone"
-                    android:maxLength="13"
-                    android:paddingBottom="5dp"
-                    android:textColor="@color/basic_white"
-                    android:textColorHint="@color/basic_white" />
+                    android:layout_height="wrap_content">
+
+                    <EditText
+                        android:id="@+id/et_email"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@null"
+                        android:hint="@string/login_tips_input_email"
+                        android:inputType="textEmailAddress"
+                        android:paddingBottom="5dp"
+                        android:textColor="@color/basic_white"
+                        android:textColorHint="@color/basic_white"
+                        android:visibility="gone" />
+
+                    <EditText
+                        android:id="@+id/et_phone"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@null"
+                        android:hint="@string/login_tips_input_phone"
+                        android:inputType="phone"
+                        android:maxLength="13"
+                        android:paddingBottom="5dp"
+                        android:textColor="@color/basic_white"
+                        android:textColorHint="@color/basic_white" />
+                </FrameLayout>
 
                 <View
                     android:layout_width="match_parent"
@@ -159,6 +176,17 @@
             android:textColor="@color/basic_text_accent"
             android:textSize="18sp"
             android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/switch_login"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/btn_login"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="17dp"
+            android:text="@string/login_action_use_email"
+            android:textColor="@color/basic_white"
+            android:textSize="16sp" />
 
         <TextView
             android:layout_width="wrap_content"

@@ -37,7 +37,7 @@ class MessageService : Service(), KodeinGlobalAware {
         return null
     }
 
-    override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         dispatcher?.start()
         initDaemon()
         LiveBus.of(BusEvent::class.java).loginEvent().observeForever(observer)

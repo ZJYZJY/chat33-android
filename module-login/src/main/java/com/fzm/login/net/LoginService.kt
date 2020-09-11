@@ -17,7 +17,14 @@ interface LoginService {
      */
     @JvmSuppressWildcards
     @POST("chat/user/phoneLogin")
-    suspend fun login(@Body map: Map<String, Any>): HttpResult<ChatLogin>
+    suspend fun phoneLogin(@Body map: Map<String, Any>): HttpResult<ChatLogin>
+
+    /**
+     * 新版聊天服务登录接口，兼容邮箱和手机号
+     */
+    @JvmSuppressWildcards
+    @POST("chat/user/emailLogin")
+    suspend fun emailLogin(@Body map: Map<String, Any>): HttpResult<ChatLogin>
 
     /**
      * 聊天服务发送短信服务
@@ -25,4 +32,11 @@ interface LoginService {
     @JvmSuppressWildcards
     @POST("chat/user/sendCode")
     suspend fun sendCode(@Body map: Map<String, Any>): HttpResult<Any>
+
+    /**
+     * 聊天服务发送邮件服务
+     */
+    @JvmSuppressWildcards
+    @POST("chat/user/sendEmail")
+    suspend fun sendEmail(@Body map: Map<String, Any>): HttpResult<Any>
 }

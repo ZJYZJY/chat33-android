@@ -402,3 +402,12 @@
 -keep class com.vivo.push.**{*; }
 -keep class com.vivo.vms.**{*; }
 -keep class xxx.xxx.xxx.PushMessageReceiverImpl{*;}
+
+#-keep class com.tencent.wcdb.*Exception
+-keep class com.tencent.wcdb.*Exception {
+    public void *(...);
+}
+-keep class com.tencent.wcdb.database.SQLiteConnection {
+    void notifyCheckpoint(java.lang.String, int);
+    void notifyChange(...);
+}

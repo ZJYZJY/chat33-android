@@ -53,8 +53,6 @@ public class SelectFileByBrowserActivity extends AppCompatActivity
 
     /*当前目录，默认是SD卡根目录*/
     private String mCurFolder = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator;
-    /*当前目录，微信目录*/
-    private final String mWeChatFolder = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "tencent/MicroMsg/Download/";
     /*所有可访问存储设备列表*/
     private List<String> mSdCardList;
 
@@ -101,8 +99,6 @@ public class SelectFileByBrowserActivity extends AppCompatActivity
 
         ivBack = findViewById(R.id.ivBack);
         ivBack.setOnClickListener(this);
-        weChatFolder = findViewById(R.id.tv_wechat);
-        weChatFolder.setOnClickListener(this);
 
         mRecyclerView = findViewById(R.id.rcv_file_list);
         mBreadRecyclerView = findViewById(R.id.breadcrumbs_view);
@@ -130,10 +126,6 @@ public class SelectFileByBrowserActivity extends AppCompatActivity
 
     private void initData() {
         executeListTask(mSelectedFileList, mCurFolder, SelectOptions.getInstance().getFileTypes(), SelectOptions.getInstance().getSortType());
-    }
-
-    private void gotoWechatFolder() {
-        executeListTask(mSelectedFileList, mWeChatFolder, SelectOptions.getInstance().getFileTypes(), SelectOptions.getInstance().getSortType());
     }
 
     private void executeListTask(List<EssFile> essFileList, String queryPath, String[] types, int sortType) {
@@ -328,15 +320,6 @@ public class SelectFileByBrowserActivity extends AppCompatActivity
             }
         } else if (id == R.id.ivBack) {
             finish();
-        } else if (id == R.id.tv_wechat) {
-            if (mCurFolder.equals(mWeChatFolder)) {
-                return;
-            }
-            if (!new File(mWeChatFolder).exists()) {
-                Toast.makeText(this, R.string.file_picker_error_wechat_file_no_exits, Toast.LENGTH_SHORT).show();
-                return;
-            }
-            executeListTask(mSelectedFileList, mWeChatFolder, SelectOptions.getInstance().getFileTypes(),SelectOptions.getInstance().getSortType());
         }
     }
 

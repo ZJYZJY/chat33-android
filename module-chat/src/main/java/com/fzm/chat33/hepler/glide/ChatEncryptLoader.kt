@@ -14,10 +14,6 @@ import com.fzm.chat33.core.bean.param.toDecParams
 import com.fzm.chat33.core.db.bean.ChatMessage
 import com.fzm.chat33.core.manager.FileEncryption
 import com.fzm.chat33.core.manager.toByteArray
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 import java.io.*
 import java.security.MessageDigest
 
@@ -59,38 +55,36 @@ class ChatEncryptLoader : ModelLoader<ChatMessage, InputStream> {
     }
 
     class ChatDataFetcher(private val message: ChatMessage) : DataFetcher<InputStream> {
+        @Volatile
         private var isCanceled: Boolean = false
         var mInputStream: InputStream? = null
-        private var job: Job? = null
 
         override fun loadData(priority: Priority, callback: DataFetcher.DataCallback<in InputStream>) {
-            job = GlobalScope.launch(Dispatchers.Main) {
-                try {
-                    if (!isCanceled) {
-                        mInputStream = if (message.briefPos == 0) {
-                            if (AppConfig.FILE_ENCRYPT && message.msg.localPath.contains(AppConfig.ENC_PREFIX)) {
-                                // 加密文件先解密
-                                ByteArrayInputStream(FileEncryption.decrypt(message.toDecParams(), File(message.msg.localPath).toByteArray()))
-                            } else {
-                                FileInputStream(message.msg.localPath)
-                            }
+            try {
+                if (!isCanceled) {
+                    mInputStream = if (message.briefPos == 0) {
+                        if (AppConfig.FILE_ENCRYPT && message.msg.localPath.contains(AppConfig.ENC_PREFIX)) {
+                            // 加密文件先解密
+                            ByteArrayInputStream(FileEncryption.decryptSync(message.toDecParams(), File(message.msg.localPath).toByteArray()))
                         } else {
-                            val chatLog = message.msg.sourceLog[message.briefPos - 1]
-                            if (AppConfig.FILE_ENCRYPT && chatLog.msg.localPath.contains(AppConfig.ENC_PREFIX)) {
-                                // 加密文件先解密
-                                ByteArrayInputStream(FileEncryption.decrypt(message.toDecParams(), File(chatLog.msg.localPath).toByteArray()))
-                            } else {
-                                FileInputStream(chatLog.msg.localPath)
-                            }
+                            FileInputStream(message.msg.localPath)
+                        }
+                    } else {
+                        val chatLog = message.msg.sourceLog[message.briefPos - 1]
+                        if (AppConfig.FILE_ENCRYPT && chatLog.msg.localPath.contains(AppConfig.ENC_PREFIX)) {
+                            // 加密文件先解密
+                            ByteArrayInputStream(FileEncryption.decryptSync(message.toDecParams(), File(chatLog.msg.localPath).toByteArray()))
+                        } else {
+                            FileInputStream(chatLog.msg.localPath)
                         }
                     }
-                    if (isCanceled) {
-                        return@launch
-                    }
-                    callback.onDataReady(mInputStream)
-                } catch (e: Exception) {
-                    callback.onLoadFailed(e)
                 }
+                if (isCanceled) {
+                    return
+                }
+                callback.onDataReady(mInputStream)
+            } catch (e: Exception) {
+                callback.onLoadFailed(e)
             }
         }
 
@@ -104,7 +98,6 @@ class ChatEncryptLoader : ModelLoader<ChatMessage, InputStream> {
 
         override fun cancel() {
             isCanceled = true
-            job?.cancel()
         }
 
         override fun getDataClass(): Class<InputStream> {

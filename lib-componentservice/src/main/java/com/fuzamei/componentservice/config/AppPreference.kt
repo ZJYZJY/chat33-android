@@ -58,7 +58,11 @@ object AppPreference {
     /**
      * 上一个登录的账号
      */
-    var LAST_LOGIN_PHONE by PreferenceDelegate("LAST_LOGIN_PHONE", "")
+    var LAST_LOGIN_ACCOUNT by PreferenceDelegate("LAST_LOGIN_ACCOUNT", "")
+    /**
+     * 上一次登录类型
+     */
+    var LAST_LOGIN_TYPE by PreferenceDelegate("LAST_LOGIN_TYPE", 0)
     /**
      * 上一次保持前台的时间
      */

@@ -16,19 +16,19 @@ interface ContractService {
     /**
      * 创建代扣交易
      */
-    @POST("/")
+    @POST(".")
     suspend fun createNoBalanceTx(@Body request: ContractRequest): ContractResponse<String>
 
     /**
      * 签名交易
      */
-    @POST("/")
+    @POST(".")
     suspend fun signRawTx(@Body request: ContractRequest): ContractResponse<String>
 
     /**
      * 发送交易
      */
-    @POST("/")
+    @POST(".")
     suspend fun sendTransaction(@Body request: ContractRequest): ContractResponse<String>
 
     /**
@@ -36,7 +36,7 @@ interface ContractService {
      *
      * @param request 合约请求参数
      */
-    @POST("/")
+    @POST(".")
     suspend fun getFriendList(@Body request: ContractRequest): ContractResponse<UserAddress.Wrapper>
 
     /**
@@ -44,7 +44,7 @@ interface ContractService {
      *
      * @param request 合约请求参数
      */
-    @POST("/")
+    @POST(".")
     suspend fun getBlockList(@Body request: ContractRequest): ContractResponse<UserAddress.Wrapper>
 
     /**
@@ -52,7 +52,7 @@ interface ContractService {
      *
      * @param request 合约请求参数
      */
-    @POST("/")
+    @POST(".")
     suspend fun modifyFriend(@Body request: ContractRequest): ContractResponse<String>
 
     /**
@@ -60,6 +60,6 @@ interface ContractService {
      *
      * @param request 合约请求参数
      */
-    @POST("/")
+    @POST(".")
     suspend fun modifyBlock(@Body request: ContractRequest): ContractResponse<String>
 }
